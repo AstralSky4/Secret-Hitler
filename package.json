@@ -1,0 +1,26 @@
+{
+  "name": "astralbot",
+  "version": "1.0.0",
+  "description": "Personal Discord bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AstralSky4/AstralBot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AstralSky4/AstralBot/issues"
+  },
+  "homepage": "https://github.com/AstralSky4/AstralBot#readme",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "canvas": "^2.6.1",
+    "discord.js": "^12.1.1",
+    "sequelize": "^5.21.6",
+    "sqlite3": "^4.1.1"
+  }
+}
