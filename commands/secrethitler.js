@@ -12,6 +12,8 @@ module.exports = {
     guildOnly: true,
     async execute(message, args) {
 
+        message.delete();
+
         function Player(user) {
             this.user = user;
             this.secretRole;
@@ -47,7 +49,7 @@ module.exports = {
         var cancel = false;
         var numPlayers = 1;
 
-        const filter = async (reaction, user) => {
+        const filter = (reaction, user) => {
             if (user == host && reaction.emoji.name === '✅' && numPlayers >= 5) {
                 start = true;
                 return true;
@@ -67,8 +69,8 @@ module.exports = {
                         .setURL('https://secrethitler.com/')
                         .setThumbnail('https://cdn.roosterteeth.com/image/upload/t_l/f_auto/3/7038c6fb-7982-4d2f-b5b5-50694ca27464.png/original/hitler.png')
                         .setFooter('Developed by AstralSky');
-                    await gameStart.edit(updateEmbed);
-                    await players.push(new Player(user));
+                    gameStart.edit(updateEmbed);
+                    players.push(new Player(user));
                     numPlayers++;
                     return true;
                 }
@@ -188,47 +190,37 @@ module.exports = {
                 }
             }
 
-            const voiceChannel = await message.guild.channels.create('Secret Hitler', {
-                type: 'voice',
-                permissionOverwrites: [
-                    {
-                        id: message.guild.id,
-                        deny: ['CONNECT'],
-                    },
-                ],
-            });
+            const voiceChannel = await message.guild.channels.create('Secret Hitler', {type: 'voice'});
+            const textChannel = await message.guild.channels.create('Secret Hitler', {type: 'text'});
 
-            const textChannel = await message.guild.channels.create('Secret Hitler', {
-                type: 'text',
-                permissionOverwrites: [
-                    {
-                        id: message.guild.id,
-                        deny: ['VIEW_CHANNEL'],
-                    },
-                ],
-            });
+            var voicePerms = [
+                {
+                    id: message.guild.roles.everyone,
+                    deny: ['CONNECT']
+                }
+            ];
+
+            var textPerms = [
+                {
+                    id: message.guild.roles.everyone,
+                    deny: ['VIEW_CHANNEL']
+                }
+            ];
 
             for (var i = 0; i < numPlayers; i++) {
-                await voiceChannel.overwritePermissions([{id: players[i].user.id, CONNECT: true}]);
-                await textChannel.overwritePermissions([{id: players[i].user.id, VIEW_CHANNEL: true, SEND_MESSAGES: false}]);
+
+                voicePerms.push({id: players[i].user.id, allow: ['CONNECT']});
+                textPerms.push({id: players[i].user.id, allow: ['VIEW_CHANNEL'], deny: ['SEND_MESSAGES']});
 
                 var username = players[i].user.username;
                 if (username.length < 2) username += '1';
 
-                // var newURL;
-                // if (players[i].user.avatarURL() == null) {
-                //     newURL = players[i].user.displayAvatarURL();
-                // } else if (players[i].user.avatarURL().indexOf('size=') != -1) {
-                //     var replace = players[i].user.avatarURL().slice(players[i].user.avatarURL().indexOf('size='));
-                //     newURL = players[i].user.avatarURL().replace(replace, 'size=128');
-                // } else {
-                //     var replace = players[i].user.avatarURL().slice(players[i].user.avatarURL().indexOf('.gif'));
-                //     newURL = players[i].user.avatarURL().replace(replace, '.png?size=128');
-                // }
-
                 players[i].emoji = await message.guild.emojis.create(players[i].user.displayAvatarURL({format: 'png', dynamic: false, size: 128}), username);
                 randomArr[i] = i;
             }
+
+            await voiceChannel.overwritePermissions(voicePerms);
+            await textChannel.overwritePermissions(textPerms);
 
             for (var i = 0; i< numPlayers; i++) {
                 var swapIndex = i + Math.floor(Math.random() * (numPlayers - i));
@@ -344,14 +336,14 @@ module.exports = {
                 var counter = 1;
                 if (numPlayersAlive <= 5) {
                     for (var i = 0; i < numPlayers; i++) {
-                        if (players[randomArr[i]].user != president.user && !players[randomArr[i]].lastPres && !players[randomArr[i]].lastChancellor && players[randomArr[i]].alive) {
+                        if (players[randomArr[i]].user != president.user && !players[randomArr[i]].lastPres && players[randomArr[i]].alive) {
                             choices += `**${counter}.** ${players[randomArr[i]].user}\n`;
                             counter++;
                         }
                     }
                 } else {
                     for (var i = 0; i < numPlayers; i++) {
-                        if (players[randomArr[i]].user != president.user && !players[randomArr[i]].lastPres && players[randomArr[i]].alive) {
+                        if (players[randomArr[i]].user != president.user && !players[randomArr[i]].lastPres && !players[randomArr[i]].lastChancellor && players[randomArr[i]].alive) {
                             choices += `**${counter}.** ${players[randomArr[i]].user}\n`;
                             counter++;
                         }
@@ -364,12 +356,12 @@ module.exports = {
                 if (numPlayersAlive <= 5) {
                     for (var i = 0; i < numPlayers; i++) {
                         players[i].voted = false;
-                        if (players[randomArr[i]].user != president.user && !players[randomArr[i]].lastPres && !players[randomArr[i]].lastChancellor && players[randomArr[i]].alive) await select.react(players[randomArr[i]].emoji);
+                        if (players[randomArr[i]].user != president.user && !players[randomArr[i]].lastPres && players[randomArr[i]].alive) await select.react(players[randomArr[i]].emoji);
                     }
                 } else {
                     for (var i = 0; i < numPlayers; i++) {
                         players[i].voted = false;
-                        if (players[randomArr[i]].user != president.user && !players[randomArr[i]].lastPres && players[randomArr[i]].alive) await select.react(players[randomArr[i]].emoji);
+                        if (players[randomArr[i]].user != president.user && !players[randomArr[i]].lastPres && !players[randomArr[i]].lastChancellor && players[randomArr[i]].alive) await select.react(players[randomArr[i]].emoji);
                     }
                 }
 
@@ -404,15 +396,15 @@ module.exports = {
 
                 var yes = 0;
 
-                const filterVote = (reaction, user) => {
-                    var found = players[players.map(element => element.user).indexOf(user)];
-                    if (players.map(element => element.user).indexOf(user) == -1) return false;
+                const filterVote = (reaction, player) => {
+                    var found = players[players.map(element => element.user).indexOf(player)];
+                    if (players.map(element => element.user).indexOf(player) == -1) return false;
                     if (!found.voted && found.alive) {
-                        if (reaction.emoji == '✅') {
+                        if (reaction.emoji.name === '✅') {
                             yes++;
                             found.voted = true;
                             return true;
-                        } else if (reaction.emoji == '❌') {
+                        } else if (reaction.emoji.name === '❌') {
                             found.voted = true;
                             return true;
                         }
@@ -420,7 +412,7 @@ module.exports = {
                     return false;
                 }
 
-                await votingMessage.awaitReactions(filterVote, {max: numPlayersAlive});
+                await votingMessage.awaitReactions(filterVote, {maxUsers: numPlayersAlive});
                 await votingMessage.delete();
 
                 if (yes > (numPlayersAlive / 2) + 1) {
@@ -503,13 +495,13 @@ module.exports = {
 
                     const filterPolicy = (reaction, user) => {
                         if (user.id == president.user.id) {
-                            if (reaction.emoji == '1️⃣') {
+                            if (reaction.emoji.name === '1️⃣') {
                                 polNum = 0;
                                 return true;
-                            } else if (reaction.emoji == '2️⃣') {
+                            } else if (reaction.emoji.name === '2️⃣') {
                                 polNum = 1;
                                 return true;
-                            } else if (reaction.emoji == '3️⃣') {
+                            } else if (reaction.emoji.name === '3️⃣') {
                                 polNum = 2;
                                 return true;
                             }
@@ -558,13 +550,13 @@ module.exports = {
 
                     const filterPolicyChancellor = (reaction, user) => {
                         if (user.id == chancellor.user.id) {
-                            if (reaction.emoji == '1️⃣') {
+                            if (reaction.emoji.name === '1️⃣') {
                                 polNum = 0;
                                 return true;
-                            } else if (reaction.emoji == '2️⃣') {
+                            } else if (reaction.emoji.name === '2️⃣') {
                                 polNum = 1;
                                 return true;
-                            } else if (reaction.emoji == '❌' && numPolF == 5) {
+                            } else if (reaction.emoji.name === '❌' && numPolF == 5) {
                                 polNum = -1;
                                 return true;
                             }
@@ -592,10 +584,10 @@ module.exports = {
 
                         const filterVeto = (reaction, user) => {
                             if (user.id == president.user.id) {
-                                if (reaction.emoji == '✅') {
+                                if (reaction.emoji.name === '✅') {
                                     veto = true;
                                     return true;
-                                } else if (reaction.emoji == '❌') {
+                                } else if (reaction.emoji.name === '❌') {
                                     veto = false;
                                     return true;
                                 }
@@ -621,10 +613,10 @@ module.exports = {
 
                             const filterPolicyChancellorResend = (reaction, user) => {
                                 if (user.id == chancellor.user.id) {
-                                    if (reaction.emoji == '1️⃣') {
+                                    if (reaction.emoji.name === '1️⃣') {
                                         polNum = 0;
                                         return true;
-                                    } else if (reaction.emoji == '2️⃣') {
+                                    } else if (reaction.emoji.name === '2️⃣') {
                                         polNum = 1;
                                         return true;
                                     }
@@ -761,7 +753,7 @@ module.exports = {
                                     sentPeek.react('✅');
 
                                     const filterReaction = (reaction, user) => {
-                                        if (reaction.emoji == '✅' && user.id == president.user.id) {
+                                        if (reaction.emoji.name === '✅' && user.id == president.user.id) {
                                             return true;
                                         }
                                     }

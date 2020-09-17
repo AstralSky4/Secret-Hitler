@@ -4,6 +4,9 @@ module.exports = {
     args: true,
     adminOnly: true,
 	execute(message, args) {
+
+		message.delete();
+
 		const commandName = args[0].toLowerCase();
 		const command = message.client.commands.get(commandName)
 			|| message.client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
@@ -21,6 +24,6 @@ module.exports = {
 			console.log(error);
 			return message.channel.send(`There was an error while reloading a command \`${commandName}\`:\n\`${error.message}\``);
 		}
-		message.channel.send(`Command \`${commandName}\` was reloaded!`);
+		message.channel.send(`Command \`${commandName}\` was reloaded.`);
 	},
 };
