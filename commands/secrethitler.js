@@ -5,6 +5,31 @@ const {Sequelize, sequelize} = require('../dbConfig');
 // const Players = require('../models/Players')(sequelize, Sequelize.DataTypes);
 // const Leaderboard = require('../models/Leaderboard')(sequelize, Sequelize.DataTypes);
 
+function lobbyEmbed(waiting) {
+    return new Discord.MessageEmbed()
+        .setColor('RED')
+        .setTitle('Secret Hitler')
+        .setDescription(`React with a 👍 to join the game!\n\nIf you are the one who started this game, you may react with a ✅ to start the game (need at least 5 players) or a ❌ to cancel.`)
+        .addField('Players Waiting', waiting)
+        .addField(`Don't know how to play?`, `Read the rules [here](https://secrethitler.com/assets/Secret_Hitler_Rules.pdf) or watch [this](https://www.youtube.com/watch?v=APiugylcAJw) short video.`)
+        .setURL('https://secrethitler.com/')
+        .setThumbnail('https://cdn.roosterteeth.com/image/upload/t_l/f_auto/3/7038c6fb-7982-4d2f-b5b5-50694ca27464.png/original/hitler.png')
+        .setFooter('Developed by AstralSky');
+}
+
+function shuffle(deck) {
+    var currentIndex = deck.length;
+    var temporaryValue, randomIndex;
+    while (0 !== currentIndex) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+        temporaryValue = deck[currentIndex];
+        deck[currentIndex] = deck[randomIndex];
+        deck[randomIndex] = temporaryValue;
+    }
+    return deck;
+}
+
 module.exports = {
     name: 'secrethitler',
     description: 'Start a game of Secret Hitler',
@@ -31,20 +56,10 @@ module.exports = {
         var players = [new Player(host)];
         var waiting = `${host}`;
 
-        const embed = new Discord.MessageEmbed()
-            .setColor('RED')
-            .setTitle('Secret Hitler')
-            .setDescription(`React with a 👍 to join the game!\n\nIf you are the one who started this game, you may react with a ✅ to start the game (need at least 5 players) or a ❌ to cancel.`)
-            .addField('Players Waiting', waiting)
-            .addField(`Don't know how to play?`, `Read the rules [here](https://secrethitler.com/assets/Secret_Hitler_Rules.pdf) or watch [this](https://www.youtube.com/watch?v=APiugylcAJw) short video.`)
-            .setURL('https://secrethitler.com/')
-            .setThumbnail('https://cdn.roosterteeth.com/image/upload/t_l/f_auto/3/7038c6fb-7982-4d2f-b5b5-50694ca27464.png/original/hitler.png')
-            .setFooter('Developed by AstralSky');
-        
-        const gameStart = await message.channel.send(embed);
-
+        const gameStart = await message.channel.send(lobbyEmbed(waiting));
         await gameStart.react('👍');
         await gameStart.react('❌');
+
         var start = false;
         var cancel = false;
         var numPlayers = 1;
@@ -60,16 +75,7 @@ module.exports = {
                 var found = players.map(element => element.user).indexOf(user);
                 if (found == -1) {
                     waiting += `\n${user}`;
-                    const updateEmbed = new Discord.MessageEmbed()
-                        .setColor('RED')
-                        .setTitle('Secret Hitler')
-                        .setDescription(`React with a 👍 to join the game!\n\nIf you are the one who started this game, you may react with a ✅ to start the game (need at least 5 players) or a ❌ to cancel.`)
-                        .addField('Players Waiting', waiting)
-                        .addField(`Don't know how to play?`, `Read the rules [here](https://secrethitler.com/assets/Secret_Hitler_Rules.pdf) or watch [this](https://www.youtube.com/watch?v=APiugylcAJw) short video.`)
-                        .setURL('https://secrethitler.com/')
-                        .setThumbnail('https://cdn.roosterteeth.com/image/upload/t_l/f_auto/3/7038c6fb-7982-4d2f-b5b5-50694ca27464.png/original/hitler.png')
-                        .setFooter('Developed by AstralSky');
-                    gameStart.edit(updateEmbed);
+                    gameStart.edit(lobbyEmbed(waiting));
                     players.push(new Player(user));
                     numPlayers++;
                     return true;
@@ -81,12 +87,12 @@ module.exports = {
 
         const collector = await gameStart.createReactionCollector(filter, {time: 1500000});
 
-        await collector.on('collect', async (reaction, reactionCollector) => {
+        await collector.on('collect', async () => {
             if (numPlayers >= 5) await gameStart.react('✅');
             if (numPlayers == 10 || start || cancel) collector.stop();
         });
 
-        collector.on('end', async collected => {
+        collector.on('end', async () => {
 
             gameStart.delete();
 
@@ -259,28 +265,15 @@ module.exports = {
             for (var i = 0; i < 6; i++) policyDeck.push('Liberal');
             for (var i = 0; i < 11; i++) policyDeck.push('Fascist');
 
-            var currentIndex = policyDeck.length;
-            var temporaryValue, randomIndex;
+            policyDeck = shuffle(policyDeck);
 
-            // While there remain elements to shuffle...
-            while (0 !== currentIndex) {
-                // Pick a remaining element...
-                randomIndex = Math.floor(Math.random() * currentIndex);
-                currentIndex -= 1;
-
-                // And swap it with the current element.
-                temporaryValue = policyDeck[currentIndex];
-                policyDeck[currentIndex] = policyDeck[randomIndex];
-                policyDeck[randomIndex] = temporaryValue;
-            }
-
-            var dist = 360;
-            var libFirstCardx = 468;
-            var libFirstCardy = 282;
-            var fascFirstCardx = 280;
-            var fascFirstCardy = 290;
-            var cardSizex = 290;
-            var cardSizey = 430;
+            const dist = 360;
+            const libFirstCardx = 468;
+            const libFirstCardy = 282;
+            const fascFirstCardx = 280;
+            const fascFirstCardy = 290;
+            const cardSizex = 290;
+            const cardSizey = 430;
 
             var chosenPresidentBool = false;
             var chosenPresident;
@@ -442,20 +435,7 @@ module.exports = {
 
                         while (discardPile.length != 0) policyDeck.push(discardPile.pop());
                         
-                        var currentIndex = policyDeck.length;
-                        var temporaryValue, randomIndex;
-
-                        // While there remain elements to shuffle...
-                        while (0 !== currentIndex) {
-                            // Pick a remaining element...
-                            randomIndex = Math.floor(Math.random() * currentIndex);
-                            currentIndex -= 1;
-
-                            // And swap it with the current element.
-                            temporaryValue = policyDeck[currentIndex];
-                            policyDeck[currentIndex] = policyDeck[randomIndex];
-                            policyDeck[randomIndex] = temporaryValue;
-                        }
+                        policyDeck = shuffle(policyDeck);
                     }
 
                     var polCanvas = Canvas.createCanvas(cardSizex * 3, cardSizey);
@@ -709,20 +689,7 @@ module.exports = {
 
                                         while (discardPile.length != 0) policyDeck.push(discardPile.pop());
                                         
-                                        var currentIndex = policyDeck.length;
-                                        var temporaryValue, randomIndex;
-                
-                                        // While there remain elements to shuffle...
-                                        while (0 !== currentIndex) {
-                                            // Pick a remaining element...
-                                            randomIndex = Math.floor(Math.random() * currentIndex);
-                                            currentIndex -= 1;
-                
-                                            // And swap it with the current element.
-                                            temporaryValue = policyDeck[currentIndex];
-                                            policyDeck[currentIndex] = policyDeck[randomIndex];
-                                            policyDeck[randomIndex] = temporaryValue;
-                                        }
+                                        policyDeck = shuffle(policyDeck);
                                     }
 
                                     polCanvas = Canvas.createCanvas(cardSizex * 3, cardSizey);

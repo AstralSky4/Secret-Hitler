@@ -8,12 +8,13 @@ const LFUsers = require('../models/LFUsers')(sequelize, Sequelize.DataTypes);
 module.exports = {
     name: 'lastfm',
     description: 'LastFM',
-    aliases: ['lfm', 'fm'],
+    aliases: ['lfm', 'fm', 'lf'],
     usage: '[command name]',
     async execute(message, args) {
 
+        message.delete();
         var url = "https://ws.audioscrobbler.com/2.0/?method=";
-        var api = "&api_key=797d187e4e5c9337ec445380edb414de&format=json";
+        var api = `&api_key=${lfkey}&format=json`;
 
         const user = message.mentions.users.first() || message.author;
         var userDB = await LFUsers.findOne({where: {user_id: user.id}});
