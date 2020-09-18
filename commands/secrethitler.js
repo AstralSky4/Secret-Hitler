@@ -85,28 +85,29 @@ module.exports = {
             return false;
         }
 
-        const collector = await gameStart.createReactionCollector(filter, {time: 1500000});
+        const collector = await gameStart.createReactionCollector(filter, {time: 150000});
 
         await collector.on('collect', async () => {
             if (numPlayers >= 5) await gameStart.react('✅');
             if (numPlayers == 10 || start || cancel) collector.stop();
         });
 
-        collector.on('end', async () => {
+        collector.on('end', async (collected, end) => {
 
             gameStart.delete();
 
+            const noStart = new Discord.MessageEmbed()
+                .setColor('RED')
+                .setTitle('Failed to start game');
+
             if (cancel) {
-                const noStart = new Discord.MessageEmbed()
-                    .setColor('RED')
-                    .setTitle('Failed to start game')
-                    .setDescription('The host ended the game early.')
+                noStart.setDescription('The host ended the game.');
                 return message.channel.send(noStart);
             } else if (numPlayers < 5) {
-                const noStart = new Discord.MessageEmbed()
-                    .setColor('RED')
-                    .setTitle('Failed to start game')
-                    .setDescription('Not enough players joined the game.')
+                noStart.setDescription('Not enough players joined the game.');
+                return message.channel.send(noStart);
+            } else if (end == 'time') {
+                noStart.setDescription('The game lobby timed out.');
                 return message.channel.send(noStart);
             }
 
@@ -867,6 +868,9 @@ module.exports = {
 
                         if (policy == 'Liberal') numPolL++;
                         else numPolF++;
+
+                        if (players.map(element => element.lastChancellor).indexOf(true) != -1) players[players.map(element => element.lastChancellor).indexOf(true)].lastChancellor = false;
+                        if (players.map(element => element.lastPres).indexOf(true) != -1) players[players.map(element => element.lastPres).indexOf(true)].lastPres = false;
                     }
 
                     if (numPolL == 5) { 
@@ -876,9 +880,6 @@ module.exports = {
                         gameEnd = true;
                         winCon = '6FASC';
                     }
-
-                    if (players.map(element => element.lastChancellor).indexOf(true) != -1) players[players.map(element => element.lastChancellor).indexOf(true)].lastChancellor = false;
-                    if (players.map(element => element.lastPres).indexOf(true) != -1) players[players.map(element => element.lastPres).indexOf(true)].lastPres = false;
                 }
 
 
